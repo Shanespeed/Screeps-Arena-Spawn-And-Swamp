@@ -1,20 +1,22 @@
 import { getObjectsByPrototype, findInRange, findClosestByPath, findClosestByRange } from '/game/utils';
 import { Creep, StructureSpawn, StructureContainer } from '/game/prototypes';
 import { WORK, ATTACK, RANGED_ATTACK, HEAL, MOVE, CARRY, TOUGH, RESOURCE_ENERGY, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES } from '/game/constants';
+import { Visual } from '/game';
 import { } from '/arena';
 
 const roles = { WORK, ATTACK, RANGED_ATTACK, HEAL };
-var allyCreeps = { };
-var enemyCreeps = { };
-var workerCreeps = { };
-var attackCreeps = { };
-var rangedCreeps = { };
-var healCreeps = { };
-var combatCreeps = { };
-var firstPlatoon = { };
-var containers = { };
-var spawner;
-var enemySpawner;
+let allyCreeps = { };
+let enemyCreeps = { };
+let workerCreeps = { };
+let attackCreeps = { };
+let rangedCreeps = { };
+let healCreeps = { };
+let combatCreeps = { };
+let firstPlatoon = { };
+let containers = { };
+let spawner;
+let enemySpawner;
+let targetLines;
 var isStartOfGame = true;
 
 export function loop() {
@@ -30,7 +32,10 @@ export function loop() {
     
     // Spawns standard unit bundle or relentless offense
     if (isStartOfGame)
+    {
+        targetLines = new Visual(0, true);
         startGameSpawn();
+    }
     else
         buildOffense();
 
@@ -162,6 +167,7 @@ function roleBehaviour(creep)
         case WORK:
 
             var targetContainer = findClosestByPath(creep, containers);
+            targetLines.line(creep, targetContainer, {color: '#FFFF00'});
 
             if (creep.store.getFreeCapacity() <= 0)
             {
