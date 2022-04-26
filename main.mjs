@@ -122,11 +122,13 @@ function roleBehaviour(creep)
 
             if (findInRange(creep, enemyCreeps, 5).length > 0)
             {
+                console.log("Enemy spotted!");
                 if (creep.attack(enemyCreeps.findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
                     creep.moveTo(enemyCreeps.findClosestByPath(creep, enemyCreeps)); 
             }
             else
             {
+                console.log("Going for enemy spawner");
                 if (creep.attack(enemySpawner) == ERR_NOT_IN_RANGE)
                     creep.moveTo(enemySpawner);
             }
