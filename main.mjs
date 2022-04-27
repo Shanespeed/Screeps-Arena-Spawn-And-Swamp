@@ -85,6 +85,7 @@ function startGameSpawn()
 function buildOffense()
 {
     spawnFastAttacker();
+    spawnFastRanger();
 }
 
 function spawnWorker()
@@ -96,34 +97,40 @@ function spawnWorker()
 function spawnAttacker()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 140)
-        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, ATTACK]);
+        spawner.spawnCreep([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, ATTACK]);
 }
 
 function spawnFastAttacker()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 190)
-        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK]);
+        spawner.spawnCreep([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK]);
 }
 
 function spawnRanger()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-        spawner.spawnCreep([MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
+        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
+}
+
+function spawnFastRanger()
+{
+    if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
+        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
 }
 
 function spawnHealer()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-        spawner.spawnCreep([MOVE, MOVE, HEAL]);
+        spawner.spawnCreep([TOUGH, MOVE, MOVE, HEAL]);
 }
 
-function roleBehaviour(creep)
+function roleBehaviour(creep) // Divide into functions and rename this one
 {
     var role = creep.body.find(i => i.type == WORK || i.type == ATTACK || i.type == RANGED_ATTACK || i.type == HEAL).type;
     
     switch(role)
     {
-        case ATTACK:
+        case ATTACK: // target healers first if in range
 
             if (findInRange(creep, enemyCreeps, 5).length > 0)
             {
@@ -137,7 +144,7 @@ function roleBehaviour(creep)
             }
             break;
                 
-        case RANGED_ATTACK:
+        case RANGED_ATTACK: // if target has lower movement parts start kiting // target healers first if in range
 
             if (findInRange(creep, enemyCreeps, 8).length > 0)
             {
@@ -151,7 +158,7 @@ function roleBehaviour(creep)
             }
             break;
 
-        case HEAL:
+        case HEAL:  // Does it heal allies?
 
             var injuredAllies = getObjectsByPrototype(Creep).filter(i => i.hits < i.hitsMax);
 
