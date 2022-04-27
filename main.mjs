@@ -65,12 +65,12 @@ function updateState()
 
 function startGameSpawn()
 {
-    // Spawns 3 workers, 3 attackers, 1 ranger, 1 healer
+    // Spawns 3 workers, 3 attackers, 3 ranger, 1 healer
     if (workerCreeps.length < 5)
         spawnWorker();
     else if (attackCreeps.length < 3)
         spawnAttacker();
-    else if (rangedCreeps.length < 1)
+    else if (rangedCreeps.length < 3)
         spawnRanger();
     else if (healCreeps.length < 1)
         spawnHealer();
@@ -90,31 +90,31 @@ function buildOffense()
 function spawnWorker()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-            spawner.spawnCreep([WORK, CARRY, MOVE]);
+        spawner.spawnCreep([MOVE, WORK, CARRY]);
 }
 
 function spawnAttacker()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 140)
-            spawner.spawnCreep([ATTACK, MOVE, MOVE, TOUGH]);
+        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, ATTACK]);
 }
 
 function spawnFastAttacker()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 190)
-            spawner.spawnCreep([ATTACK, MOVE, MOVE, MOVE, TOUGH]);
+        spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK]);
 }
 
 function spawnRanger()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-            spawner.spawnCreep([RANGED_ATTACK, MOVE]);
+        spawner.spawnCreep([MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
 }
 
 function spawnHealer()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-            spawner.spawnCreep([HEAL, MOVE]);
+        spawner.spawnCreep([MOVE, MOVE, HEAL]);
 }
 
 function roleBehaviour(creep)
@@ -127,13 +127,11 @@ function roleBehaviour(creep)
 
             if (findInRange(creep, enemyCreeps, 5).length > 0)
             {
-                console.log("Enemy spotted!");
                 if (creep.attack(findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
                     creep.moveTo(findClosestByPath(creep, enemyCreeps)); 
             }
             else
             {
-                console.log("Going for enemy spawner");
                 if (creep.attack(enemySpawner) == ERR_NOT_IN_RANGE)
                     creep.moveTo(enemySpawner);
             }
@@ -158,7 +156,7 @@ function roleBehaviour(creep)
             var injuredAllies = getObjectsByPrototype(Creep).filter(i => i.hits < i.hitsMax);
 
             if (injuredAllies.length <= 0)
-                creep.moveTo(combatCreeps[0]);
+                creep.moveTo(findClosestByPath(creep, combatCreeps));
 
             if (creep.rangedHeal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
                 creep.moveTo(injuredAllies[0]);
