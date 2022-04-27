@@ -128,8 +128,8 @@ function roleBehaviour(creep)
             if (findInRange(creep, enemyCreeps, 5).length > 0)
             {
                 console.log("Enemy spotted!");
-                if (creep.attack(enemyCreeps.findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
-                    creep.moveTo(enemyCreeps.findClosestByPath(creep, enemyCreeps)); 
+                if (creep.attack(findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
+                    creep.moveTo(findClosestByPath(creep, enemyCreeps)); 
             }
             else
             {
@@ -143,8 +143,8 @@ function roleBehaviour(creep)
 
             if (findInRange(creep, enemyCreeps, 8).length > 0)
             {
-                if (creep.rangedAttack(enemyCreeps.findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
-                    creep.moveTo(enemyCreeps.findClosestByPath(creep, enemyCreeps));    
+                if (creep.rangedAttack(findClosestByPath(creep, enemyCreeps)) == ERR_NOT_IN_RANGE)
+                    creep.moveTo(findClosestByPath(creep, enemyCreeps));    
             }
             else
             {
@@ -167,7 +167,7 @@ function roleBehaviour(creep)
         case WORK:
 
             var targetContainer = findClosestByPath(creep, containers);
-            targetLines.line(creep, targetContainer, {color: '#FFFF00'});
+            //targetLines.line(creep, targetContainer, {color: '#FFFF00'});
 
             if (creep.store.getFreeCapacity() <= 0)
             {
