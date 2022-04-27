@@ -121,7 +121,7 @@ function spawnFastRanger()
 function spawnHealer()
 {
     if (spawner.store.getCapacity(RESOURCE_ENERGY) >= 200)
-        spawner.spawnCreep([TOUGH, MOVE, MOVE, HEAL]);
+        spawner.spawnCreep([TOUGH, MOVE, MOVE, MOVE, MOVE,HEAL]);
 }
 
 function roleBehaviour(creep) // Divide into functions and rename this one
@@ -158,9 +158,9 @@ function roleBehaviour(creep) // Divide into functions and rename this one
             }
             break;
 
-        case HEAL:  // Does it heal allies?
+        case HEAL:
 
-            var injuredAllies = getObjectsByPrototype(Creep).filter(i => i.hits < i.hitsMax);
+            var injuredAllies = combatCreeps.filter(i => i.hits < i.hitsMax);
 
             if (injuredAllies.length <= 0)
             {
@@ -169,14 +169,14 @@ function roleBehaviour(creep) // Divide into functions and rename this one
                 else
                     creep.moveTo(findClosestByPath(creep, firstPlatoon.filter(i => i != creep)));
             }
-            else if (creep.rangedHeal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
+            else if (creep.heal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
             {
                 creep.moveTo(injuredAllies[0]);
             }
             
             break;
 
-        case WORK:
+        case WORK: // Workers get stuck looting containers
 
             var targetContainer = findClosestByPath(creep, containers);
             //targetLines.line(creep, targetContainer, {color: '#FFFF00'});
