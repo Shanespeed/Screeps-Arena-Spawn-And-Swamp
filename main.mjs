@@ -156,10 +156,17 @@ function roleBehaviour(creep)
             var injuredAllies = getObjectsByPrototype(Creep).filter(i => i.hits < i.hitsMax);
 
             if (injuredAllies.length <= 0)
-                creep.moveTo(findClosestByPath(creep, combatCreeps));
-
-            if (creep.rangedHeal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
+            {
+                if (firstPlatoon.filter(i => i.body.type != HEAL).length <= 0)
+                    creep.moveTo(findClosestByPath(creep, combatCreeps.filter(i => i != creep)));
+                else
+                    creep.moveTo(findClosestByPath(creep, firstPlatoon.filter(i => i != creep)));
+            }
+            else if (creep.rangedHeal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
+            {
                 creep.moveTo(injuredAllies[0]);
+            }
+            
             break;
 
         case WORK:
