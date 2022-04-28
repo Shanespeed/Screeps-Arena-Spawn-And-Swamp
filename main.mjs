@@ -4,21 +4,32 @@ import { getObjectsByPrototype, findInRange, findClosestByPath, findClosestByRan
 import { Creep, StructureSpawn, StructureContainer } from '/game/prototypes';
 import { MOVE, TOUGH, ATTACK, RANGED_ATTACK, HEAL, WORK, CARRY, RESOURCE_ENERGY, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES } from '/game/constants';
 import { Visual } from '/game';
+import { CostMatrix } from 'game/path-finder';
 import { } from '/arena';
 
-const roles = { ATTACK, RANGED_ATTACK, HEAL, WORK };
-let allyCreeps = { };
-let enemyCreeps = { };
-let workerCreeps = { };
-let attackCreeps = { };
-let rangedCreeps = { };
-let healCreeps = { };
-let combatCreeps = { };
-let firstPlatoon = { };
-let containers = { };
+let presetCreep = 
+{
+    attackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, ATTACK ],
+    fastAttackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK ],
+    rangedAttackCreep : [ TOUGH, TOUGH, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK ],
+    fastRangedAttackCreep : [ TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK ],
+    healCreep : [ TOUGH, MOVE, MOVE, MOVE, MOVE, HEAL ],
+    workCreep : [ MOVE, WORK, CARRY ]
+};
+
+let allyCreeps = [ ];
+let enemyCreeps = [ ];
+let workerCreeps = [ ];
+let attackCreeps = [ ];
+let rangedCreeps = [ ];
+let healCreeps = [ ];
+let combatCreeps = [ ];
+let firstPlatoon = [ ];
+let containers = [ ];
 let spawner;
 let enemySpawner;
 let targetLines;
+let costMatrix;
 var isStartOfGame = true;
 
 export function loop() {
@@ -36,6 +47,7 @@ export function loop() {
     // Spawns standard unit bundle first followed by a continuous offense
     if (isStartOfGame)
     {
+        costMatrix = new CostMatrix;
         targetLines = new Visual(0, true);
         startGameSpawn();
     }
@@ -52,6 +64,7 @@ export function loop() {
     }
 }
 
+// TODO: Make test loop logging every container without filter
 // Updates the variables containing the game state.
 function updateState()
 {
@@ -91,17 +104,26 @@ function behaviourAssign(creep)
     }
 }
 
+// TODO: Make it
+// Sets up custom cost matrix
+function setupCostMatrix()
+{
+    // Makes area around spawn unlikely to pass
+    // Look into "plain" when hovering over tiles
+
+}
+
 // Spawns 5 workers. Builds first platoon (3 attackers, 3 rangers, 1 healer).
 function startGameSpawn()
 {
     if (workerCreeps.length < 5)
-        spawnWorker();
+        spawner.spawnCreep(presetCreep.workCreep);
     else if (attackCreeps.length < 3)
-        spawnAttacker();
+        spawner.spawnCreep(presetCreep.attackCreep)
     else if (rangedCreeps.length < 3)
-        spawnRanger();
+        spawner.spawnCreep(presetCreep.rangedAttackCreep);
     else if (healCreeps.length < 1)
-        spawnHealer();
+        spawner.spawnCreep(presetCreep.healCreep);
     else
     {
         firstPlatoon = attackCreeps.concat(rangedCreeps, healCreeps);
@@ -112,44 +134,8 @@ function startGameSpawn()
 // Spawns a fast attacker followed by a fast ranger.
 function buildOffense()
 {
-    spawnFastAttacker();
-    spawnFastRanger();
-}
-
-// Spawns an attacker.
-function spawnAttacker()
-{
-    spawner.spawnCreep([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, ATTACK]);
-}
-
-// Spawns a fast attacker.
-function spawnFastAttacker()
-{
-    spawner.spawnCreep([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK]);
-}
-
-// Spawns a ranger.
-function spawnRanger()
-{
-    spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
-}
-
-// Spawns a fast ranger.
-function spawnFastRanger()
-{
-    spawner.spawnCreep([TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]);
-}
-
-// Spawns a healer.
-function spawnHealer()
-{
-    spawner.spawnCreep([TOUGH, MOVE, MOVE, MOVE, MOVE,HEAL]);
-}
-
-// Spawns a worker.
-function spawnWorker()
-{
-    spawner.spawnCreep([MOVE, WORK, CARRY]);
+    spawner.spawnCreep(presetCreep.fastAttackCreep);
+    spawner.spawnCreep(presetCreep.fastRangedAttackCreep);
 }
 
 // TODO: target healers first if in range
