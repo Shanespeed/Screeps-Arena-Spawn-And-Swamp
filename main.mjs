@@ -4,10 +4,10 @@ import { getObjectsByPrototype, findInRange, findClosestByPath, findClosestByRan
 import { Creep, StructureSpawn, StructureContainer } from '/game/prototypes';
 import { MOVE, TOUGH, ATTACK, RANGED_ATTACK, HEAL, WORK, CARRY, RESOURCE_ENERGY, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES } from '/game/constants';
 import { Visual } from '/game';
-import { CostMatrix } from 'game/path-finder';
+import { searchPath, CostMatrix } from 'game/path-finder';
 import { } from '/arena';
 
-let presetCreep = 
+const presetCreep = 
 {
     attackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, ATTACK ],
     fastAttackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK ],
@@ -30,7 +30,7 @@ let spawner;
 let enemySpawner;
 let targetLines;
 let costMatrix;
-var isStartOfGame = true;
+let isStartOfGame = true;
 
 export function loop() {
 
@@ -38,7 +38,7 @@ export function loop() {
     updateState();
 
     // Command workers
-    for (var i = 0; i < workerCreeps.length; i++)
+    for (let i = 0; i < workerCreeps.length; i++)
     {
         behaviourAssign(workerCreeps[i]);
     }
@@ -57,11 +57,13 @@ export function loop() {
     // Move out after first platoon completes
     if (!isStartOfGame)
     {  
-        for (var i = 0; i < combatCreeps.length; i++)
+        for (let i = 0; i < combatCreeps.length; i++)
         {
             behaviourAssign(combatCreeps[i]);
         }
     }
+
+    console.log(firstPlatoon);
 }
 
 // TODO: Make test loop logging every container without filter
@@ -83,9 +85,9 @@ function updateState()
 // Assigns behaviour to creep's role.
 function behaviourAssign(creep)
 {
-    var role = creep.body.find(i => i.type == ATTACK || i.type == RANGED_ATTACK || i.type == HEAL || i.type == WORK).type;
+    let role = creep.body.find(i => i.type == ATTACK || i.type == RANGED_ATTACK || i.type == HEAL || i.type == WORK).type;
     
-    switch(role)
+    switch (role)
     {
         case ATTACK:
             attackBehaviour(creep);
@@ -124,10 +126,16 @@ function startGameSpawn()
         spawner.spawnCreep(presetCreep.rangedAttackCreep);
     else if (healCreeps.length < 1)
         spawner.spawnCreep(presetCreep.healCreep);
-    else
-    {
-        firstPlatoon = attackCreeps.concat(rangedCreeps, healCreeps);
+    else    
         isStartOfGame = false;
+
+    firstPlatoon = attackCreeps.concat(rangedCreeps, healCreeps);
+
+    // Moves the first platoon out of the way so that new units can spawn freely
+    let firstGatherPoint = searchPath(spawner, enemySpawner).path[5];
+    for (let i = 0; i < firstPlatoon.length; i++)
+    {
+        firstPlatoon[i].moveTo(firstGatherPoint);
     }
 }
 
@@ -181,6 +189,7 @@ function rangedAttackBehaviour(creep)
     }
 }
 
+// BUG: firstPlatoon check throws error because units get undefined when dying
 // TODO: if route is too long start ranged healing
 /* Command creep to follow the heal behaviour. 
 - Detects all allies who are not at max hits.
@@ -191,11 +200,11 @@ function rangedAttackBehaviour(creep)
 */
 function healBehaviour(creep)
 {
-    var injuredAllies = combatCreeps.filter(i => i.hits < i.hitsMax);
+    let injuredAllies = combatCreeps.filter(i => i.hits < i.hitsMax);
 
     if (injuredAllies.length <= 0)
     {
-        if (firstPlatoon.filter(i => i.body.type != HEAL).length <= 0)
+        if (firstPlatoon.filter(i => i.body.some(part => part.type != HEAL)).length <= 0)
             creep.moveTo(findClosestByPath(creep, combatCreeps.filter(i => i != creep)));
         else
             creep.moveTo(findClosestByPath(creep, firstPlatoon.filter(i => i != creep)));
@@ -217,7 +226,7 @@ function healBehaviour(creep)
 */
 function workBehaviour(creep)
 {
-    var targetContainer = findClosestByPath(creep, containers);
+    let targetContainer = findClosestByPath(creep, containers);
     //targetLines.line(creep, targetContainer, {color: '#FFFF00'});
 
     if (creep.store.getFreeCapacity() <= 0)
