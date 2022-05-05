@@ -43,7 +43,7 @@ export function loop() {
         behaviourAssign(workerCreeps[i]);
     }
     
-    // TODO: attack from both top and bottom side
+    // TODO: spawn mini melee squad of 3 to sneak into enemy base after first squad
     // Spawns standard unit bundle first followed by a continuous offense
     if (isStartOfGame)
     {
@@ -63,7 +63,7 @@ export function loop() {
         }
     }
 
-    console.log(firstPlatoon);
+    //console.log(firstPlatoon);
 }
 
 // TODO: Make test loop logging every container without filter
