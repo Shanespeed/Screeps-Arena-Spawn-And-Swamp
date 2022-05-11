@@ -12,6 +12,7 @@ const presetCreep =
     fastAttackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK ],
     rangedAttackCreep : [ TOUGH, TOUGH, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK ],
     fastRangedAttackCreep : [ TOUGH, TOUGH, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK ],
+    flankCreep : [ MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK],
     healCreep : [ TOUGH, MOVE, MOVE, MOVE, MOVE, HEAL ],
     workCreep : [ MOVE, WORK, CARRY ]
 };
@@ -67,7 +68,7 @@ function updateState()
 }
 
 // Assigns behaviour to creep's role.
-function behaviourAssign(creep)
+function defaultBehaviourAssign(creep)
 {
     let role = creep.body.find(i => i.type == ATTACK || i.type == RANGED_ATTACK || i.type == HEAL || i.type == WORK).type;
     
@@ -114,14 +115,14 @@ function determineTactic()
     {  
         for (let i = 0; i < combatCreeps.length; i++)
         {
-            behaviourAssign(combatCreeps[i]);
+            defaultBehaviourAssign(combatCreeps[i]);
         }
     }
 
     // Command workers
     for (let i = 0; i < workerCreeps.length; i++)
     {
-        behaviourAssign(workerCreeps[i]);
+        defaultBehaviourAssign(workerCreeps[i]);
     }
 
     //console.log(firstPlatoon);
@@ -152,9 +153,11 @@ function startGameSpawn()
 }
 
 // TODO: Make it
-// Spawns second platoon with purpose to flank enemy base (3 extremely fast attackers).
+// Spawns second platoon to flank enemy base (3 extremely fast attackers).
 function secondPlatoonSpawn()
 {
+    let currentCreep = spawner.spawnCreep(presetCreep.flankCreep);
+    flankBehaviour(currentCreep);
     secondPlan = false;
 }
 
@@ -232,6 +235,28 @@ function healBehaviour(creep)
     {
         creep.moveTo(injuredAllies[0]);
     }   
+}
+
+/* Command creep to follow the flank behaviour.
+- Finds the optimal path.
+- Sets a position on the opposite side of the optimal path.
+- Moves to the flanking position.
+- Attacks enemy base if it gets close enough.
+*/
+function flankBehaviour(creep)
+{
+    let optimalPath = searchPath(spawner, enemySpawner).path;
+    let flankPosition;
+
+    if (optimalPath[20] > spawner.y)
+        flankPosition = {x: enemySpawner.x, y: enemySpawner.y - 10};
+    else
+        flankPosition = {x: enemySpawner.x, y: enemySpawner.y + 10};
+
+    if (findInRange(creep, enemySpawner, 13).length > 0)
+        creep.attack(enemySpawner);
+    else
+        creep.moveTo(flankPosition);
 }
 
 // BUG: Workers won't loot containers that spawn
