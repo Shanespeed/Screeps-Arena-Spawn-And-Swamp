@@ -1,10 +1,9 @@
 // TODO: Divide into seperate files/classes?
 
-import { getObjectsByPrototype, findInRange, findClosestByPath, findClosestByRange } from '/game/utils';
+import { getObjectsByPrototype, findInRange, findClosestByPath, findClosestByRange, getTicks } from '/game/utils';
 import { Creep, StructureSpawn, StructureContainer } from '/game/prototypes';
 import { MOVE, TOUGH, ATTACK, RANGED_ATTACK, HEAL, WORK, CARRY, RESOURCE_ENERGY, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES } from '/game/constants';
-import { Visual } from '/game';
-import { searchPath, CostMatrix } from 'game/path-finder';
+import { searchPath } from 'game/path-finder';
 import { } from '/arena';
 
 const presetCreep = 
@@ -25,45 +24,30 @@ let rangedCreeps = [ ];
 let healCreeps = [ ];
 let combatCreeps = [ ];
 let firstPlatoon = [ ];
+let secondPlatoon = [ ];
 let containers = [ ];
 let spawner;
 let enemySpawner;
-let targetLines;
-let costMatrix;
 let isStartOfGame = true;
+let secondPlan = true;
 
 export function loop() {
+
+    // Runs only at start of program
+    if (getTicks() == 1)
+        awake();
 
     // Updates the variable states
     updateState();
 
-    // Command workers
-    for (let i = 0; i < workerCreeps.length; i++)
-    {
-        behaviourAssign(workerCreeps[i]);
-    }
-    
-    // TODO: spawn mini melee squad of 3 to sneak into enemy base after first squad
-    // Spawns standard unit bundle first followed by a continuous offense
-    if (isStartOfGame)
-    {
-        costMatrix = new CostMatrix;
-        targetLines = new Visual(0, true);
-        startGameSpawn();
-    }
-    else
-        buildOffense();
+    // Runs gameplan
+    determineTactic();
+}
 
-    // Move out after first platoon completes
-    if (!isStartOfGame)
-    {  
-        for (let i = 0; i < combatCreeps.length; i++)
-        {
-            behaviourAssign(combatCreeps[i]);
-        }
-    }
-
-    //console.log(firstPlatoon);
+// Runs a single time at the start of the game
+function awake()
+{
+    console.log("The battle begins");
 }
 
 // TODO: Make test loop logging every container without filter
@@ -115,6 +99,34 @@ function setupCostMatrix()
 
 }
 
+// Determines tactic based on game state
+function determineTactic()
+{
+    if (isStartOfGame)
+        startGameSpawn();
+    else if (secondPlan)
+        secondPlatoonSpawn();
+    else
+        buildOffense();
+
+    // Move out after first platoon completes
+    if (!isStartOfGame)
+    {  
+        for (let i = 0; i < combatCreeps.length; i++)
+        {
+            behaviourAssign(combatCreeps[i]);
+        }
+    }
+
+    // Command workers
+    for (let i = 0; i < workerCreeps.length; i++)
+    {
+        behaviourAssign(workerCreeps[i]);
+    }
+
+    //console.log(firstPlatoon);
+}
+
 // Spawns 5 workers. Builds first platoon (3 attackers, 3 rangers, 1 healer).
 function startGameSpawn()
 {
@@ -137,6 +149,13 @@ function startGameSpawn()
     {
         firstPlatoon[i].moveTo(firstGatherPoint);
     }
+}
+
+// TODO: Make it
+// Spawns second platoon with purpose to flank enemy base (3 extremely fast attackers).
+function secondPlatoonSpawn()
+{
+    secondPlan = false;
 }
 
 // Spawns a fast attacker followed by a fast ranger.
@@ -227,7 +246,6 @@ function healBehaviour(creep)
 function workBehaviour(creep)
 {
     let targetContainer = findClosestByPath(creep, containers);
-    //targetLines.line(creep, targetContainer, {color: '#FFFF00'});
 
     if (creep.store.getFreeCapacity() <= 0)
     {
