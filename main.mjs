@@ -25,12 +25,12 @@ let rangedCreeps = [ ];
 let healCreeps = [ ];
 let combatCreeps = [ ];
 let firstPlatoon = [ ];
-let secondPlatoon = [ ];
+//let secondPlatoon = [ ];
 let containers = [ ];
 let spawner;
 let enemySpawner;
 let isStartOfGame = true;
-let secondPlan = true;
+//let secondPlan = true;
 
 export function loop() {
 
@@ -105,8 +105,9 @@ function determineTactic()
 {
     if (isStartOfGame)
         startGameSpawn();
+        /*
     else if (secondPlan)
-        secondPlatoonSpawn();
+        secondPlatoonSpawn();*/
     else
         buildOffense();
 
