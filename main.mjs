@@ -6,6 +6,7 @@ import { MOVE, TOUGH, ATTACK, RANGED_ATTACK, HEAL, WORK, CARRY, RESOURCE_ENERGY,
 import { searchPath } from 'game/path-finder';
 import { } from '/arena';
 
+// Collection of body presets.
 const presetCreep = 
 {
     attackCreep : [ TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, ATTACK ],
@@ -17,6 +18,7 @@ const presetCreep =
     workCreep : [ MOVE, WORK, CARRY ]
 };
 
+//TODO: Make custom Creep object with enum for roles.
 let allyCreeps = [ ];
 let enemyCreeps = [ ];
 let workerCreeps = [ ];
@@ -25,15 +27,15 @@ let rangedCreeps = [ ];
 let healCreeps = [ ];
 let combatCreeps = [ ];
 let firstPlatoon = [ ];
-//let secondPlatoon = [ ];
+let secondPlatoon = [ ];
 let containers = [ ];
 let spawner;
 let enemySpawner;
-let isStartOfGame = true;
-//let secondPlan = true;
+let firstAttack = false;
+let secondAttack = false;
 
-export function loop() {
-
+export function loop() 
+{
     // Runs only at start of program
     if (getTicks() == 1)
         awake();
@@ -103,30 +105,30 @@ function setupCostMatrix()
 // Determines tactic based on game state
 function determineTactic()
 {
-    if (isStartOfGame)
+    if (!firstAttack)
         startGameSpawn();
-        /*
-    else if (secondPlan)
-        secondPlatoonSpawn();*/
+    else if (!secondAttack)
+        secondPlatoonSpawn();
     else
         buildOffense();
 
     // Move out after first platoon completes
-    if (!isStartOfGame)
-    {  
-        for (let i = 0; i < combatCreeps.length; i++)
-        {
-            defaultBehaviourAssign(combatCreeps[i]);
-        }
+    if (firstAttack)
+    {
+        if (combatCreeps.length > 0)
+            combatCreeps.forEach(currentCreep => defaultBehaviourAssign(currentCreep));
+    }
+
+    // Move out after second platoon completes
+    if (secondAttack)
+    {
+        if (secondPlatoon.length > 0)
+            secondPlatoon.forEach(currentCreep => flankBehaviour(currentCreep));
     }
 
     // Command workers
-    for (let i = 0; i < workerCreeps.length; i++)
-    {
-        defaultBehaviourAssign(workerCreeps[i]);
-    }
-
-    //console.log(firstPlatoon);
+    if (workerCreeps.length > 0)
+        workerCreeps.forEach(currentCreep => defaultBehaviourAssign(currentCreep));
 }
 
 // Spawns 5 workers. Builds first platoon (3 attackers, 3 rangers, 1 healer).
@@ -135,31 +137,51 @@ function startGameSpawn()
     if (workerCreeps.length < 5)
         spawner.spawnCreep(presetCreep.workCreep);
     else if (attackCreeps.length < 3)
-        spawner.spawnCreep(presetCreep.attackCreep)
+    {
+        let newCreep = spawner.spawnCreep(presetCreep.attackCreep).object;
+        
+        if (newCreep != null)
+            firstPlatoon.push(newCreep);
+    }
     else if (rangedCreeps.length < 3)
-        spawner.spawnCreep(presetCreep.rangedAttackCreep);
-    else if (healCreeps.length < 1)
-        spawner.spawnCreep(presetCreep.healCreep);
-    else    
-        isStartOfGame = false;
+    {
+        let newCreep = spawner.spawnCreep(presetCreep.rangedAttackCreep).object;
 
-    firstPlatoon = attackCreeps.concat(rangedCreeps, healCreeps);
+        if (newCreep != null)
+            firstPlatoon.push(newCreep);
+    }
+    else if (healCreeps.length < 1)
+    {
+        let newCreep = spawner.spawnCreep(presetCreep.healCreep).object;
+
+        if (newCreep != null)
+            firstPlatoon.push(newCreep);
+    }   
+    else
+    {
+        firstAttack = true;
+        return;
+    }
 
     // Moves the first platoon out of the way so that new units can spawn freely
     let firstGatherPoint = searchPath(spawner, enemySpawner).path[5];
-    for (let i = 0; i < firstPlatoon.length; i++)
-    {
-        firstPlatoon[i].moveTo(firstGatherPoint);
-    }
+
+    if (firstPlatoon.length > 0)
+        firstPlatoon.forEach(currentCreep => currentCreep.moveTo(firstGatherPoint));
 }
 
-// TODO: Make it
 // Spawns second platoon to flank enemy base (3 extremely fast attackers).
 function secondPlatoonSpawn()
 {
-    let currentCreep = spawner.spawnCreep(presetCreep.flankCreep);
-    flankBehaviour(currentCreep);
-    secondPlan = false;
+    if (secondPlatoon.length < 3)
+    {
+        let currentCreep = spawner.spawnCreep(presetCreep.flankCreep).object;
+        
+        if (currentCreep != null)
+            secondPlatoon.push(currentCreep);
+    }
+    else
+        secondAttack = true;
 }
 
 // Spawns a fast attacker followed by a fast ranger.
@@ -233,11 +255,10 @@ function healBehaviour(creep)
             creep.moveTo(findClosestByPath(creep, firstPlatoon.filter(i => i != creep)));
     }
     else if (creep.heal(injuredAllies[0]) == ERR_NOT_IN_RANGE)
-    {
-        creep.moveTo(injuredAllies[0]);
-    }   
+        creep.moveTo(injuredAllies[0]); 
 }
 
+// BUG: Behaviour conflicts with standard attack behaviour (because these creeps fall under attack creeps)
 /* Command creep to follow the flank behaviour.
 - Finds the optimal path.
 - Sets a position on the opposite side of the optimal path.
@@ -247,7 +268,7 @@ function healBehaviour(creep)
 function flankBehaviour(creep)
 {
     let optimalPath = searchPath(spawner, enemySpawner).path;
-    let flankPosition;
+    let flankPosition = null;
 
     if (optimalPath[20] > spawner.y)
         flankPosition = {x: enemySpawner.x, y: enemySpawner.y - 10};
@@ -255,7 +276,10 @@ function flankBehaviour(creep)
         flankPosition = {x: enemySpawner.x, y: enemySpawner.y + 10};
 
     if (findInRange(creep, enemySpawner, 13).length > 0)
-        creep.attack(enemySpawner);
+    {
+        if (creep.attack(enemySpawner) == ERR_NOT_IN_RANGE)
+            creep.moveTo(enemySpawner);
+    }
     else
         creep.moveTo(flankPosition);
 }
